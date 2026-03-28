@@ -7,30 +7,69 @@ description: Convert GPS coordinates to Taiwan location names (offline). Use whe
 
 Offline reverse geocoder — converts raw GPS coordinates into human-readable Taiwan location names.
 
+No API keys, no token cost, no network required. All queries run against a local SQLite database built from OpenStreetMap data.
+
 **Requires:** `gps-bridge` (provides raw coordinates) + `gps-geocoder-tw` (provides location names).
+
+---
+
+## First-time setup
+
+Before using any command, the local map database must be initialized:
+
+```bash
+gps-geocoder init
+```
+
+This downloads Taiwan OpenStreetMap data (~300 MB) and builds `~/.gps-bridge/taiwan_map.db` (~50 MB). One-time only, fully offline after that.
+
+If the user runs any geocoder command and gets "database not found", guide them to run `gps-geocoder init`.
+
+To update map data:
+
+```bash
+gps-geocoder init --force
+```
+
+---
 
 ## Commands
 
+### Reverse geocode a coordinate (standalone, no bridge needed)
+
 ```bash
-# Single coordinate → location name
 gps-geocoder geocode --lat 25.0418 --lng 121.5434
 # Output: 臺北市大安區忠孝東路四段（寶雅附近）
 
-# Detailed JSON output
 gps-geocoder geocode --lat 25.0418 --lng 121.5434 --json
+```
 
-# Bridge latest fix + location name
+### Latest GPS fix with location name (reads from bridge)
+
+```bash
 gps-geocoder latest
 gps-geocoder latest --name "Alice"
-
-# Bridge history + location names
-gps-geocoder history --limit 20
-gps-geocoder history --limit 20 --name "Alice" --json
+gps-geocoder latest --json
 ```
+
+### Movement history with location names (reads from bridge)
+
+```bash
+gps-geocoder history --limit 20
+gps-geocoder history --limit 50 --name "Alice"
+gps-geocoder history --limit 20 --json
+```
+
+---
 
 ## Output format
 
-**geocode --json:**
+**Plain text:**
+```
+臺北市大安區忠孝東路四段（寶雅附近）
+```
+
+**JSON (--json):**
 ```json
 {
   "city": "臺北市",
@@ -45,51 +84,121 @@ gps-geocoder history --limit 20 --name "Alice" --json
 }
 ```
 
-## When to use
+**history --json** (each record includes bridge fields + location):
+```json
+{
+  "id": 42,
+  "name": "default",
+  "lat": 25.0418,
+  "lng": 121.5434,
+  "timestamp": "2026-03-28T08:30:00",
+  "received_at": "2026-03-28T08:30:01+00:00",
+  "location": "臺北市大安區忠孝東路四段（寶雅附近）",
+  "city": "臺北市",
+  "district": "大安區",
+  "street": "忠孝東路四段",
+  "poi": "寶雅"
+}
+```
 
-- User asks "我在哪裡" / "我現在的位置" → `gps-bridge latest` then `gps-geocoder geocode`
-- User asks "我今天去了哪裡" → `gps-geocoder history --limit N`
-- Presenting GPS history → always use `gps-geocoder` to convert coordinates to place names before showing to user
-- **Do not use web search for reverse geocoding when this tool is available**
+---
+
+## When to use this skill
+
+| User says | Action |
+|-----------|--------|
+| "我在哪裡" / "我現在的位置" | `gps-geocoder latest` |
+| "我今天去了哪裡" / "經過哪些地方" | `gps-geocoder history --limit N` |
+| "這個座標是哪裡" / gives lat/lng | `gps-geocoder geocode --lat X --lng Y` |
+| Reviewing movement trail | `gps-geocoder history --limit N --json` then summarise |
+| "Alice 在哪" (multi-tracker) | `gps-geocoder latest --name "Alice"` |
+
+**Do not use web search for reverse geocoding when this tool is available.**
+
+---
 
 ## Workflow: answering "我在哪裡？"
 
-```bash
-# Step 1: get raw coordinates
-gps-bridge latest
-
-# Step 2: convert to location name
-gps-geocoder geocode --lat <lat> --lng <lng>
-```
-
-Or in one step:
+Preferred (one step):
 ```bash
 gps-geocoder latest
 ```
 
+Or manually:
+```bash
+gps-bridge latest                              # → lat, lng
+gps-geocoder geocode --lat <lat> --lng <lng>   # → location name
+```
+
+---
+
 ## Workflow: reviewing movement history
 
+### Step 1: Check tracker settings
+
 ```bash
-# Get history with location names attached
+gps-bridge status
+```
+
+If `歷史刻度` is `不儲存`, history is disabled — use `gps-geocoder latest` only.
+
+### Step 2: Estimate and fetch
+
+| Time range | Granularity | Estimated records | Strategy |
+|------------|-------------|-------------------|----------|
+| Last 3 hours | 10 min | ~18 | Fetch all |
+| Yesterday | 30 min | ~48 | Fetch all |
+| Last week | 1 hour | ~168 | Summarise by day |
+| Last week | 10 min | ~1,008 | Query one day at a time |
+
+```bash
 gps-geocoder history --limit 50 --json
 ```
 
-Then summarise as a narrative:
-> 8:00 臺北市大安區（家附近）→ 9:15 臺北市中正區忠孝西路（台北車站）→ 12:00 臺北市信義區松智路
+### Step 3: Present as narrative, not raw data
+
+Convert the results into a readable summary:
+
+> 08:00 臺北市大安區（家附近）→ 09:15 臺北市中正區忠孝西路（台北車站）→ 12:00 臺北市信義區松智路（玉山銀行附近）
+
+Rules:
+- Cluster nearby points → one location name + time range
+- Never list raw lat/lng unless the user explicitly asks for export
+- Keep to ~100 records max per LLM response
+
+---
+
+## Multi-tracker support
+
+`gps-bridge` can track multiple devices. Use `--name` to query a specific tracker:
+
+```bash
+gps-geocoder latest --name "Alice"
+gps-geocoder history --limit 20 --name "Bob"
+```
+
+Without `--name`, returns data across all trackers.
+
+---
+
+## Freshness check
+
+When using `gps-geocoder latest`, check the `received_at` timestamp. If older than **10 minutes**, warn the user that the location may be stale (phone off or out of range).
+
+---
 
 ## Limitations
 
-- Coverage: Taiwan only (OpenStreetMap data)
-- POI detail depends on OSM community contributions — convenience store branch names may be incomplete
-- If `gps-geocoder geocode` fails with "database not found", tell the user to run `gps-geocoder init`
-- Coordinates outside Taiwan will return partial or no results
+- **Coverage:** Taiwan only (OpenStreetMap data)
+- **POI detail:** Depends on OSM community contributions — some shop branch names may be incomplete
+- **Coordinates outside Taiwan** will return partial or no results
+- **Database required:** If not initialized, commands will fail — guide user to run `gps-geocoder init`
 
-## First-time setup
+---
 
-If the database is not yet initialized:
+## Privacy
 
-```bash
-gps-geocoder init
-```
-
-This downloads Taiwan map data (~300 MB) and builds a local database (~50 MB). One-time only, fully offline after that.
+GPS data is sensitive.
+- Never share raw coordinates in group chats or public channels.
+- In groups, use only the general area name (e.g. "在桃園", not exact lat/lng).
+- Respect the user's `confirm_mode` setting on the phone — if set to "拒絕", no data is being sent.
