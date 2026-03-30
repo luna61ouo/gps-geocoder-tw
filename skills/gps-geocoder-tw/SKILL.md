@@ -58,6 +58,9 @@ gps-geocoder latest --json
 gps-geocoder history --limit 20
 gps-geocoder history --limit 50 --name "Alice"
 gps-geocoder history --limit 20 --json
+
+# Time range query
+gps-geocoder history --limit 100 --since "2026-03-27T14:00:00" --until "2026-03-27T18:00:00"
 ```
 
 ---

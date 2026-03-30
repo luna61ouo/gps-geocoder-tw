@@ -69,15 +69,17 @@ def geocode(lat: float, lng: float, as_json: bool) -> None:
 @click.option("--limit", default=10, show_default=True, type=click.IntRange(1, 1000),
               help="Number of recent records.")
 @click.option("--name", default=None, help="Tracker name.")
+@click.option("--since", default=None, help="Only records after this time (ISO-8601).")
+@click.option("--until", default=None, help="Only records before this time (ISO-8601).")
 @click.option("--json", "as_json", is_flag=True, default=False, help="Output as JSON")
-def history(limit: int, name: str | None, as_json: bool) -> None:
+def history(limit: int, name: str | None, since: str | None, until: str | None, as_json: bool) -> None:
     """Show GPS history with reverse-geocoded location names."""
     from gps_bridge.config import get_display_timezone
     from gps_bridge.storage import get_history, init_db
     from gps_geocoder_tw.query import reverse_geocode
 
     init_db()
-    records = get_history(limit=limit, name=name)
+    records = get_history(limit=limit, name=name, since=since, until=until)
 
     if not records:
         click.echo("No history records found.")
