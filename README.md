@@ -105,18 +105,22 @@ gps-geocoder history --limit 50 --name "Alice" --json
 
 This package includes an OpenClaw skill. Copy it into your OpenClaw skills folder:
 
-```bash
-cp -r skills/gps-geocoder-tw /path/to/your/openclaw/skills/
-```
-
-Or if you installed via pip:
+**From source (git clone):**
 
 ```bash
-pip show gps-geocoder-tw | grep Location
-# Then copy from: <location>/skills/gps-geocoder-tw/SKILL.md
+cp -r skills/gps-geocoder-tw ~/.openclaw/workspace/skills/
 ```
 
-The skill enables OpenClaw to automatically convert GPS coordinates to location names when answering questions like:
+**From pip install:**
+
+```bash
+GEO_DIR=$(python3 -c "import gps_geocoder_tw; import os; print(os.path.dirname(gps_geocoder_tw.__file__))")
+cp -r "${GEO_DIR}/../skills/gps-geocoder-tw" ~/.openclaw/workspace/skills/
+```
+
+> The default workspace skills path is `~/.openclaw/workspace/skills/`. If your workspace is elsewhere, replace the path accordingly.
+
+After copying, restart OpenClaw. The skill enables OpenClaw to automatically convert GPS coordinates to location names when answering questions like:
 
 - "我在哪裡？"
 - "我今天去了哪些地方？"
