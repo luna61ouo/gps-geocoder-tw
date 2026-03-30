@@ -103,7 +103,18 @@ gps-geocoder history --limit 50 --name "Alice" --json
 
 ## OpenClaw Skill
 
-This package includes an OpenClaw skill at [`skills/gps-geocoder-tw/SKILL.md`](skills/gps-geocoder-tw/SKILL.md).
+This package includes an OpenClaw skill. Copy it into your OpenClaw skills folder:
+
+```bash
+cp -r skills/gps-geocoder-tw /path/to/your/openclaw/skills/
+```
+
+Or if you installed via pip:
+
+```bash
+pip show gps-geocoder-tw | grep Location
+# Then copy from: <location>/skills/gps-geocoder-tw/SKILL.md
+```
 
 The skill enables OpenClaw to automatically convert GPS coordinates to location names when answering questions like:
 
