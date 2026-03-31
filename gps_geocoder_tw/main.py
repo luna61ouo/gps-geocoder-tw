@@ -74,8 +74,12 @@ def geocode(lat: float, lng: float, as_json: bool) -> None:
 @click.option("--json", "as_json", is_flag=True, default=False, help="Output as JSON")
 def history(limit: int, name: str | None, since: str | None, until: str | None, as_json: bool) -> None:
     """Show GPS history with reverse-geocoded location names."""
-    from gps_bridge.config import get_display_timezone
-    from gps_bridge.storage import get_history, init_db
+    try:
+        from gps_bridge.config import get_display_timezone
+        from gps_bridge.storage import get_history, init_db
+    except ImportError:
+        click.echo("This command requires gps-bridge. Install it with: pip install gps-bridge", err=True)
+        sys.exit(1)
     from gps_geocoder_tw.query import reverse_geocode
 
     init_db()
@@ -125,8 +129,12 @@ def history(limit: int, name: str | None, since: str | None, until: str | None, 
 @click.option("--json", "as_json", is_flag=True, default=False, help="Output as JSON")
 def latest(name: str | None, as_json: bool) -> None:
     """Show the latest GPS fix with reverse-geocoded location name."""
-    from gps_bridge.config import get_display_timezone
-    from gps_bridge.storage import get_latest, init_db
+    try:
+        from gps_bridge.config import get_display_timezone
+        from gps_bridge.storage import get_latest, init_db
+    except ImportError:
+        click.echo("This command requires gps-bridge. Install it with: pip install gps-bridge", err=True)
+        sys.exit(1)
     from gps_geocoder_tw.query import reverse_geocode
 
     init_db()
