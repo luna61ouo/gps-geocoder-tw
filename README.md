@@ -1,63 +1,85 @@
-# gps-geocoder-tw
+# gps-geocoder
 
-Offline reverse geocoder for Taiwan — converts GPS coordinates to street-level location names using [OpenStreetMap](https://www.openstreetmap.org/) data.
+Offline map system with personal place markers and pluggable regional maps.
 
-An extension for [gps-bridge](https://github.com/luna61ouo/gps-bridge). No API keys, no token cost, fully offline after setup.
+No API keys, no token cost, fully offline after setup. Works as a standalone tool or as an extension for [gps-bridge](https://github.com/luna61ouo/gps-bridge).
 
 ---
 
-## What it does
+## Concept
 
-```
-Input:  (25.0418, 121.5434)
-Output: 臺北市大安區忠孝東路四段（寶雅附近）
-```
-
-Returns structured location data: city, district, street, and nearest POI.
+Think of it as a blank globe:
+- **Install a regional map** (e.g. Taiwan) → that region lights up with full address data
+- **Import personal places** (from Google Takeout or manually) → pins appear everywhere, even without maps
+- **Query a coordinate** → tries maps first, then personal places, then returns raw coordinates
 
 ---
 
 ## Requirements
 
 - Python 3.10+
-- [gps-bridge](https://github.com/luna61ouo/gps-bridge) (installed automatically as dependency)
-- ~300 MB disk for map data download (one-time)
-- ~50 MB disk for the built database
+- Optional: [gps-bridge](https://github.com/luna61ouo/gps-bridge) (for `latest` and `history` commands)
 
 ---
 
 ## Installation
 
 ```bash
-pip install gps-geocoder-tw
+# Core only (places, geocode router — no maps)
+pip install gps-geocoder
+
+# Core + Taiwan map
+pip install gps-geocoder[tw]
+
+# Core + all available maps
+pip install gps-geocoder[all]
 ```
 
 Or from source:
 
 ```bash
-git clone https://github.com/luna61ouo/gps-geocoder-tw.git
-cd gps-geocoder-tw
-pip install -e .
+git clone https://github.com/luna61ouo/gps-geocoder.git
+cd gps-geocoder
+pip install -e ".[tw]"
 ```
-
-This will also install `gps-bridge` if not already present.
 
 ---
 
 ## Setup
 
-After installation, build the local map database (one-time):
+### Build a regional map (optional)
 
 ```bash
-gps-geocoder init
+gps-geocoder init tw
 ```
 
-This downloads Taiwan OpenStreetMap data (~300 MB) from [Geofabrik](https://download.geofabrik.de/asia/taiwan.html) and builds a local SQLite database (~50 MB). Everything runs offline after this step.
+Downloads OpenStreetMap data and builds a local SQLite database. One-time only, fully offline after that.
 
-To update the map data later:
+Check installed maps:
 
 ```bash
-gps-geocoder init --force
+gps-geocoder maps
+# + tw  Taiwan (台灣)  [built]  52.0 MB
+```
+
+### Import personal places
+
+**From Google Takeout:**
+
+1. Go to https://takeout.google.com
+2. Deselect all → select **Maps (your places)** and **Saved**
+3. Export → download ZIP → extract
+
+```bash
+gps-geocoder places import "已加上標籤的地點.json"
+gps-geocoder places import "已儲存的地點.json"
+```
+
+**Manual add:**
+
+```bash
+gps-geocoder places add --name "家" --lat 24.897 --lng 121.208
+gps-geocoder places add --name "公司" --lat 24.919 --lng 121.253 --address "桃園市龍岡路466號"
 ```
 
 ---
@@ -65,86 +87,71 @@ gps-geocoder init --force
 ## Usage
 
 ```bash
-# Reverse geocode a coordinate
+# Reverse geocode a coordinate (maps → places → fallback)
 gps-geocoder geocode --lat 25.0418 --lng 121.5434
-# → 臺北市大安區忠孝東路四段（寶雅附近）
+# [map:tw] 臺北市大安區忠孝東路四段（寶雅附近）
 
-# JSON output with full detail
-gps-geocoder geocode --lat 25.0418 --lng 121.5434 --json
+gps-geocoder geocode --lat 37.4668 --lng 126.6908
+# [places] 奶奶家（韓國 Incheon...）
 
-# Show latest GPS fix with location name (reads from gps-bridge)
+# Search places
+gps-geocoder places search "家"
+gps-geocoder places near --lat 24.9 --lng 121.2
+
+# List all places
+gps-geocoder places list
+
+# Remove a place
+gps-geocoder places remove 3
+
+# With gps-bridge: latest GPS + geocode
 gps-geocoder latest
-
-# Show movement history with location names
-gps-geocoder history --limit 20
-
-# Filter by tracker name
 gps-geocoder latest --name "Alice"
-gps-geocoder history --limit 50 --name "Alice" --json
+
+# With gps-bridge: movement history + geocode
+gps-geocoder history --limit 20
 ```
 
-### Output example
+---
 
-```json
-{
-  "city": "臺北市",
-  "district": "大安區",
-  "village": null,
-  "street": "忠孝東路四段",
-  "street_distance_m": 33.8,
-  "poi": "寶雅",
-  "poi_category": "chemist",
-  "poi_distance_m": 11.5,
-  "summary": "臺北市大安區忠孝東路四段（寶雅附近）"
-}
-```
+## Available maps
+
+Maps are regional plugins. Install only what you need:
+
+| ID | Region | Size | Install |
+|----|--------|------|---------|
+| `tw` | Taiwan (台灣) | ~52 MB | `pip install gps-geocoder[tw]` |
+
+More maps will be added over time. See [MAPS.md](gps_geocoder/maps/MAPS.md) for details.
 
 ---
 
 ## OpenClaw Skill
 
-This package includes an OpenClaw skill. Copy it into your OpenClaw skills folder:
+This package includes an OpenClaw skill. Copy it into your skills folder:
 
-**From source (git clone):**
+**From source:**
 
 ```bash
-cp -r skills/gps-geocoder-tw ~/.openclaw/workspace/skills/
+cp -r skills/gps-geocoder ~/.openclaw/workspace/skills/
 ```
 
 **From pip install:**
 
 ```bash
-GEO_DIR=$(python3 -c "import gps_geocoder_tw; import os; print(os.path.dirname(gps_geocoder_tw.__file__))")
-cp -r "${GEO_DIR}/../skills/gps-geocoder-tw" ~/.openclaw/workspace/skills/
+GEO_DIR=$(python3 -c "import gps_geocoder; import os; print(os.path.dirname(gps_geocoder.__file__))")
+cp -r "${GEO_DIR}/../skills/gps-geocoder" ~/.openclaw/workspace/skills/
 ```
 
-> The default workspace skills path is `~/.openclaw/workspace/skills/`. If your workspace is elsewhere, replace the path accordingly.
-
-After copying, restart OpenClaw. The skill enables OpenClaw to automatically convert GPS coordinates to location names when answering questions like:
-
-- "我在哪裡？"
-- "我今天去了哪些地方？"
-- "剛才經過哪裡？"
-
-### How it works with gps-bridge
-
-```
-gps-bridge (raw coordinates)  →  gps-geocoder-tw (location names)
-
-"我在哪裡？"
-  1. gps-bridge latest        → lat=25.0418, lng=121.5434
-  2. gps-geocoder geocode     → 臺北市大安區忠孝東路四段
-  3. OpenClaw responds        → "你在臺北市大安區忠孝東路四段，寶雅附近"
-```
+**Restart OpenClaw after copying the skill.**
 
 ---
 
-## Data source
+## Data storage
 
-- Map data: [OpenStreetMap](https://www.openstreetmap.org/) Taiwan extract via [Geofabrik](https://download.geofabrik.de/asia/taiwan.html)
-- Parsed with [osmiter](https://pypi.org/project/osmiter/) (pure Python, cross-platform)
-- Stored locally at `~/.gps-geocoder-tw/taiwan_map.db`
-- Coverage depends on OSM community contributions — urban areas have excellent detail, rural areas may be thinner
+- Places: `~/.gps-geocoder/places.db`
+- Maps: `~/.gps-geocoder/maps/<region>.db`
+- All data stays on your own machine
 
 ---
 
