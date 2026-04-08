@@ -78,8 +78,8 @@ gps-geocoder places import "已儲存的地點.json"
 **Manual add:**
 
 ```bash
-gps-geocoder places add --name "家" --lat 24.897 --lng 121.208
-gps-geocoder places add --name "公司" --lat 24.919 --lng 121.253 --address "桃園市龍岡路466號"
+gps-geocoder places add --name "Home" --lat 25.033 --lng 121.565
+gps-geocoder places add --name "Office" --lat 25.042 --lng 121.543 --address "Taipei, Zhongxiao E. Rd."
 ```
 
 ---

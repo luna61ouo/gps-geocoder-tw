@@ -77,8 +77,8 @@ gps-geocoder places import places.json --owner Luna
 
 Users can add places manually with coordinates:
 ```bash
-gps-geocoder places add --name "家" --lat 24.897 --lng 121.208
-gps-geocoder places add --name "公司" --lat 24.919 --lng 121.253 --address "桃園市龍岡路466號"
+gps-geocoder places add --name "Home" --lat 25.033 --lng 121.565
+gps-geocoder places add --name "Office" --lat 25.042 --lng 121.543 --address "Taipei, Zhongxiao E. Rd."
 ```
 
 **Remove:**
@@ -162,7 +162,7 @@ Run `gps-geocoder maps` to check what's installed on the user's system.
 ## Presenting results
 
 - Cluster nearby history points → one location + time range
-- Use place names when available: "離開住家" instead of "離開 24.897, 121.208"
+- Use place names when available: "離開住家" instead of "離開 25.033, 121.565"
 - Never list raw lat/lng unless the user asks for export
 - Narrative format: "09:00 住家 → 09:45 中壢區 → 10:30 龍潭牛肉麵"
 
