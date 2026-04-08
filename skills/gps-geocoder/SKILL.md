@@ -55,12 +55,37 @@ gps-geocoder maps
 
 ### Import personal places (recommended)
 
+**From Google Takeout:**
+
+Guide the user to download their saved places from Google:
+1. Go to https://takeout.google.com
+2. Deselect all → select **Maps (your places)** and **Saved**
+3. Export → download the ZIP
+4. Extract and find the JSON files
+
 ```bash
-gps-geocoder places import "已加上標籤的地點.json"
-gps-geocoder places import "已儲存的地點.json"
+gps-geocoder places import "已加上標籤的地點.json"    # labeled: 家, 工作, 朋友家
+gps-geocoder places import "已儲存的地點.json"        # saved: restaurants, shops
 ```
 
-These are Google Takeout files (Settings → Google Takeout → Maps / Saved). Works globally — no map data needed.
+Use `--owner` for multi-user setups:
+```bash
+gps-geocoder places import places.json --owner Luna
+```
+
+**Manual add (no Google needed):**
+
+Users can add places manually with coordinates:
+```bash
+gps-geocoder places add --name "家" --lat 24.897 --lng 121.208
+gps-geocoder places add --name "公司" --lat 24.919 --lng 121.253 --address "桃園市龍岡路466號"
+```
+
+**Remove:**
+```bash
+gps-geocoder places list    # find the ID
+gps-geocoder places remove 3
+```
 
 ---
 
@@ -87,6 +112,8 @@ gps-geocoder places list --category labeled       # Only labeled (家, 工作)
 gps-geocoder places search "家"                   # Search by name
 gps-geocoder places near --lat 24.9 --lng 121.2   # Nearby places (1km default)
 gps-geocoder places near --lat 24.9 --lng 121.2 --radius 5000  # 5km radius
+gps-geocoder places add --name "家" --lat 24.9 --lng 121.2     # Manual add
+gps-geocoder places remove 3                      # Remove by ID
 ```
 
 ### Latest GPS + geocode (requires gps-bridge)

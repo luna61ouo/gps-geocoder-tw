@@ -202,6 +202,32 @@ def places_near(lat: float, lng: float, radius: int, owner: str | None, as_json:
             click.echo(f"          {p['address']}")
 
 
+@places.command("add")
+@click.option("--name", required=True, help="Place name (e.g. 家, 公司)")
+@click.option("--lat", required=True, type=float, help="Latitude")
+@click.option("--lng", required=True, type=float, help="Longitude")
+@click.option("--address", default=None, help="Optional address text")
+@click.option("--owner", default="", help="Owner name for multi-user support.")
+def places_add(name: str, lat: float, lng: float, address: str | None, owner: str) -> None:
+    """Manually add a place."""
+    from gps_geocoder.places import add_place
+
+    place_id = add_place(name=name, lat=lat, lng=lng, address=address, owner=owner)
+    click.echo(f"Added: {name} (id={place_id}) at {lat:.5f}, {lng:.5f}")
+
+
+@places.command("remove")
+@click.argument("place_id", type=int)
+def places_remove(place_id: int) -> None:
+    """Remove a place by ID."""
+    from gps_geocoder.places import remove_place
+
+    if remove_place(place_id):
+        click.echo(f"Removed place id={place_id}.")
+    else:
+        click.echo(f"Place id={place_id} not found.", err=True)
+
+
 # ---------------------------------------------------------------------------
 # latest (requires gps-bridge)
 # ---------------------------------------------------------------------------

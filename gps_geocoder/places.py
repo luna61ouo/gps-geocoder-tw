@@ -197,3 +197,26 @@ def near_places(lat: float, lng: float, radius_m: float = 1000, owner: str | Non
 
     results.sort(key=lambda x: x["distance_m"])
     return results[:limit]
+
+
+def add_place(name: str, lat: float, lng: float, address: str | None = None, owner: str = "", category: str = "manual") -> int:
+    """Manually add a place. Returns the new place ID."""
+    conn = _get_conn()
+    cursor = conn.execute(
+        "INSERT INTO places (owner, name, lat, lng, address, category, source) VALUES (?, ?, ?, ?, ?, ?, 'manual')",
+        (owner, name, lat, lng, address, category),
+    )
+    conn.commit()
+    place_id = cursor.lastrowid
+    conn.close()
+    return place_id
+
+
+def remove_place(place_id: int) -> bool:
+    """Remove a place by ID. Returns True if deleted."""
+    conn = _get_conn()
+    cursor = conn.execute("DELETE FROM places WHERE id = ?", (place_id,))
+    conn.commit()
+    deleted = cursor.rowcount > 0
+    conn.close()
+    return deleted
