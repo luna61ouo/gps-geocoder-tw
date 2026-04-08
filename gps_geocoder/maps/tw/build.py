@@ -20,15 +20,17 @@ from pathlib import Path
 import click
 import requests
 
-logger = logging.getLogger("gps_geocoder_tw.build")
+logger = logging.getLogger("gps_geocoder.maps.tw.build")
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
-GEOCODER_DIR = Path.home() / ".gps-geocoder-tw"
-DB_FILE = GEOCODER_DIR / "taiwan_map.db"
-PBF_FILE = GEOCODER_DIR / "taiwan-latest.osm.pbf"
+from gps_geocoder import GEOCODER_DIR
+
+MAPS_DIR = GEOCODER_DIR / "maps"
+DB_FILE = MAPS_DIR / "taiwan.db"
+PBF_FILE = MAPS_DIR / "taiwan-latest.osm.pbf"
 GEOFABRIK_URL = "https://download.geofabrik.de/asia/taiwan-latest.osm.pbf"
 
 ADMIN_LEVELS = {4, 6, 7, 8}
@@ -43,7 +45,7 @@ POI_TAG_KEYS = ["railway", "public_transport", "station", "amenity", "shop", "to
 
 def download_pbf(force: bool = False) -> Path:
     """Download Taiwan OSM PBF from Geofabrik."""
-    GEOCODER_DIR.mkdir(parents=True, exist_ok=True)
+    MAPS_DIR.mkdir(parents=True, exist_ok=True)
     if PBF_FILE.exists() and not force:
         size_mb = PBF_FILE.stat().st_size / (1024 * 1024)
         click.echo(f"PBF already exists: {PBF_FILE} ({size_mb:.0f} MB)")
@@ -301,7 +303,7 @@ def parse_and_build(pbf_path: Path, db_path: Path) -> None:
 
 def build_db(force: bool = False) -> Path:
     """Download PBF and build the geocoder database. Returns DB path."""
-    GEOCODER_DIR.mkdir(parents=True, exist_ok=True)
+    MAPS_DIR.mkdir(parents=True, exist_ok=True)
 
     if DB_FILE.exists() and not force:
         click.echo(f"Database already exists: {DB_FILE}")

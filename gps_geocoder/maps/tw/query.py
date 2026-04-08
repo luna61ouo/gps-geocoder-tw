@@ -18,8 +18,9 @@ import math
 import sqlite3
 from pathlib import Path
 
-GEOCODER_DIR = Path.home() / ".gps-geocoder-tw"
-DB_FILE = GEOCODER_DIR / "taiwan_map.db"
+from gps_geocoder import GEOCODER_DIR
+
+DB_FILE = GEOCODER_DIR / "maps" / "taiwan.db"
 
 # Search radii in degrees (approximate)
 ADMIN_SEARCH_RADIUS = 0.05   # ~5 km

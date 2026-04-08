@@ -1,4 +1,1 @@
-gps-bridge>=0.1.0
 click>=8.1.0
-requests>=2.31.0
-osmiter>=1.3.0
