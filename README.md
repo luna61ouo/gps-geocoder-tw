@@ -139,22 +139,24 @@ More maps will be added over time. See [MAPS.md](gps_geocoder/maps/MAPS.md) for 
 
 ## OpenClaw Skill
 
-This package includes an OpenClaw skill. Copy it into your skills folder:
+This package includes an OpenClaw skill. After installing gps-geocoder, you **MUST** copy the skill and restart the Gateway. Without restart, OpenClaw will not see the new commands.
 
-**From source:**
+**Step 1 — Copy skill:**
 
+From source:
 ```bash
 cp -r skills/gps-geocoder ~/.openclaw/workspace/skills/
 ```
 
-**From pip install:**
-
+From pip install:
 ```bash
 GEO_DIR=$(python3 -c "import gps_geocoder; import os; print(os.path.dirname(gps_geocoder.__file__))")
 cp -r "${GEO_DIR}/../skills/gps-geocoder" ~/.openclaw/workspace/skills/
 ```
 
-**Restart OpenClaw after copying the skill.**
+**Step 2 — Restart the Gateway.**
+
+Only after restarting will the `places`, `maps`, and `geocode` commands be available.
 
 ---
 
