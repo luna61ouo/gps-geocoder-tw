@@ -30,19 +30,7 @@ dependencies = [
 gps-geocoder = "gps_geocoder.main:cli"
 
 [project.optional-dependencies]
-tw = [
-    "requests>=2.31.0",
-    "osmiter>=1.3.0",
-]
-jp = [
-    "requests>=2.31.0",
-    "osmiter>=1.3.0",
-]
-kr = [
-    "requests>=2.31.0",
-    "osmiter>=1.3.0",
-]
-all = [
+maps = [
     "requests>=2.31.0",
     "osmiter>=1.3.0",
 ]

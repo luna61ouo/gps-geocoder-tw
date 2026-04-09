@@ -40,10 +40,10 @@ def _haversine(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
 
 def _get_conn() -> sqlite3.Connection:
     if not DB_FILE.exists():
-        raise FileNotFoundError(
-            f"Geocoder database not found: {DB_FILE}\n"
-            "Run `gps-geocoder init` to download and build the database."
-        )
+        from gps_geocoder.maps.jp.build import build_db
+        import click
+        click.echo("Japan map not found. Downloading and building (this may take several minutes)...")
+        build_db()
     conn = sqlite3.connect(str(DB_FILE))
     conn.row_factory = sqlite3.Row
     return conn

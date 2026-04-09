@@ -16,21 +16,19 @@ Regional maps will be added over time based on community demand:
 
 - `us` — United States (by state, due to data size)
 
-## Install only what you need
-
-Maps can be large. Install only the regions you actually need:
+## Install and build
 
 ```bash
-pip install gps-geocoder[tw]       # Taiwan only
-pip install gps-geocoder[tw,jp]    # Taiwan + Japan
-pip install gps-geocoder[all]      # All available maps
+# Install map support (covers all regions)
+pip install gps-geocoder[maps]
+
+# Build only the regions you need
+gps-geocoder init tw    # Taiwan
+gps-geocoder init jp    # Japan
+gps-geocoder init kr    # South Korea
 ```
 
-Then build the database:
-
-```bash
-gps-geocoder init tw
-```
+Maps auto-build on first query if not initialized.
 
 ## Without any maps
 

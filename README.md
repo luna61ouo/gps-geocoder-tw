@@ -25,19 +25,11 @@ Think of it as a blank globe:
 ## Installation
 
 ```bash
-# Core only (places, geocode router — no maps)
+# Core only (places, no map support)
 pip install gps-geocoder
 
-# Core + a specific regional map
-pip install gps-geocoder[tw]
-pip install gps-geocoder[jp]
-pip install gps-geocoder[kr]
-
-# Core + multiple maps
-pip install gps-geocoder[tw,jp]
-
-# Core + all available maps
-pip install gps-geocoder[all]
+# Core + map support (any region)
+pip install gps-geocoder[maps]
 ```
 
 Or from source:
@@ -45,7 +37,7 @@ Or from source:
 ```bash
 git clone https://github.com/luna61ouo/gps-geocoder.git
 cd gps-geocoder
-pip install -e ".[tw]"
+pip install -e ".[maps]"
 ```
 
 ---
@@ -60,14 +52,14 @@ gps-geocoder init jp    # Build Japan map
 gps-geocoder init kr    # Build South Korea map
 ```
 
-Downloads OpenStreetMap data and builds a local SQLite database. One-time only, fully offline after that.
+Downloads OpenStreetMap data and builds a local SQLite database. One-time only, fully offline after that. Maps also auto-build on first use if not initialized.
 
 Check installed maps:
 
 ```bash
 gps-geocoder maps
-# + tw  Taiwan   [built]  52.0 MB
-# + jp  Japan    [built]  400.0 MB
+# + tw  Taiwan       [built]      52.0 MB
+# + jp  Japan        [built]     400.0 MB
 # - kr  South Korea  [not built]
 ```
 
@@ -133,11 +125,13 @@ gps-geocoder history --limit 20
 
 Maps are regional plugins. Install only what you need:
 
-| ID | Region | Approx. size | Install |
-|----|--------|-------------|---------|
-| `tw` | Taiwan | ~52 MB | `pip install gps-geocoder[tw]` |
-| `jp` | Japan | ~400 MB | `pip install gps-geocoder[jp]` |
-| `kr` | South Korea | ~100 MB | `pip install gps-geocoder[kr]` |
+| ID | Region | Approx. DB size | Build command |
+|----|--------|----------------|---------------|
+| `tw` | Taiwan | ~52 MB | `gps-geocoder init tw` |
+| `jp` | Japan | ~400 MB | `gps-geocoder init jp` |
+| `kr` | South Korea | ~100 MB | `gps-geocoder init kr` |
+
+All maps require `pip install gps-geocoder[maps]`. Maps also auto-build on first query if not initialized.
 
 More maps will be added over time. See [MAPS.md](gps_geocoder/maps/MAPS.md) for details.
 

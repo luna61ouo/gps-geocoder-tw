@@ -30,27 +30,25 @@ Maps are regional and can be large. Only install the regions the user actually n
 # Core only (places, no maps)
 pip install gps-geocoder
 
-# Core + Taiwan map
-pip install gps-geocoder[tw]
-
-# Core + all available maps
-pip install gps-geocoder[all]
+# Core + map support (any region)
+pip install gps-geocoder[maps]
 ```
 
-After installing a map plugin, build the local database:
+After installing, build the maps the user needs:
 
 ```bash
-gps-geocoder init tw
+gps-geocoder init tw    # Taiwan (~52 MB)
+gps-geocoder init jp    # Japan (~400 MB)
+gps-geocoder init kr    # South Korea (~100 MB)
 ```
 
-This downloads OpenStreetMap data and builds a local SQLite database. One-time only, fully offline after that.
-
-Check what's available:
+Maps also auto-build on first query if not initialized. Check status:
 
 ```bash
 gps-geocoder maps
-# + tw  Taiwan (台灣)  [built]  52.0 MB
-# - jp  Japan          [not built]
+# + tw  Taiwan       [built]  52.0 MB
+# - jp  Japan        [not built]
+# - kr  South Korea  [not built]
 ```
 
 ### Import personal places (recommended)
