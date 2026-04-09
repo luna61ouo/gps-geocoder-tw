@@ -45,10 +45,17 @@ def list_maps() -> list[dict]:
         name = getattr(mod, "MAP_NAME", map_id)
         name_local = getattr(mod, "MAP_NAME_LOCAL", "")
 
-        # Check if the DB file exists
-        db_files = list(MAPS_DIR.glob(f"{map_id}*.db")) if MAPS_DIR.exists() else []
-        built = len(db_files) > 0
-        size_mb = sum(f.stat().st_size for f in db_files) / (1024 * 1024) if built else 0
+        # Check if the DB file exists by reading the actual path from the build module
+        built = False
+        size_mb = 0.0
+        try:
+            build_mod = importlib.import_module(f"gps_geocoder.maps.{map_id}.build")
+            db_file = getattr(build_mod, "DB_FILE", None)
+            if db_file and db_file.exists():
+                built = True
+                size_mb = db_file.stat().st_size / (1024 * 1024)
+        except ImportError:
+            pass
 
         result.append({
             "id": map_id,
