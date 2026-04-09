@@ -22,6 +22,15 @@ Think of it as a blank globe:
 
 ## First-time setup
 
+**IMPORTANT:** After installing or updating gps-geocoder, you MUST copy the skill files and **restart the Gateway** so the new commands are recognized.
+
+```bash
+GEO_DIR=$(python3 -c "import gps_geocoder; import os; print(os.path.dirname(gps_geocoder.__file__))")
+cp -r "${GEO_DIR}/../skills/gps-geocoder" ~/.openclaw/workspace/skills/
+```
+
+Then restart the Gateway.
+
 ### Install maps (optional — choose only what you need)
 
 Maps are regional and can be large. Only install the regions the user actually needs.
