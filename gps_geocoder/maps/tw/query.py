@@ -116,6 +116,31 @@ def _find_nearest_poi(conn: sqlite3.Connection, lat: float, lng: float) -> tuple
     return best["name"], cat, dist
 
 
+ADDRESS_SEARCH_RADIUS = 0.002  # ~200 m
+
+
+def _find_nearest_address(conn: sqlite3.Connection, lat: float, lng: float) -> tuple[str | None, float]:
+    """Find the nearest address (street + housenumber). Returns (full_address, distance_meters)."""
+    r = ADDRESS_SEARCH_RADIUS
+    rows = conn.execute(
+        """
+        SELECT a.street, a.housenumber, a.lat, a.lng
+        FROM addresses a
+        JOIN addresses_rtree rt ON a.id = rt.id
+        WHERE rt.min_lat <= ? AND rt.max_lat >= ?
+          AND rt.min_lng <= ? AND rt.max_lng >= ?
+        """,
+        (lat + r, lat - r, lng + r, lng - r),
+    ).fetchall()
+
+    if not rows:
+        return None, float("inf")
+
+    best = min(rows, key=lambda row: _haversine(lat, lng, row["lat"], row["lng"]))
+    dist = _haversine(lat, lng, best["lat"], best["lng"])
+    return f"{best['street']}{best['housenumber']}", dist
+
+
 def reverse_geocode(lat: float, lng: float) -> dict:
     """
     Reverse geocode a GPS coordinate to a Taiwan location.
@@ -139,6 +164,7 @@ def reverse_geocode(lat: float, lng: float) -> dict:
         district = _find_admin(conn, lat, lng, 7) or _find_admin(conn, lat, lng, 6)
         village = _find_admin(conn, lat, lng, 8)
         street, street_dist = _find_nearest_street(conn, lat, lng)
+        address, addr_dist = _find_nearest_address(conn, lat, lng)
         poi, poi_cat, poi_dist = _find_nearest_poi(conn, lat, lng)
     finally:
         conn.close()
@@ -151,7 +177,10 @@ def reverse_geocode(lat: float, lng: float) -> dict:
         parts.append(district)
     if village:
         parts.append(village)
-    if street and street_dist < 500:
+    # Prefer exact address over street name
+    if address and addr_dist < 100:
+        parts.append(address)
+    elif street and street_dist < 500:
         parts.append(street)
 
     summary = "".join(parts) if parts else f"{lat:.4f}, {lng:.4f}"
@@ -165,6 +194,8 @@ def reverse_geocode(lat: float, lng: float) -> dict:
         "city": city,
         "district": district,
         "village": village,
+        "address": address if address and addr_dist < 100 else None,
+        "address_distance_m": round(addr_dist, 1),
         "street": street if street and street_dist < 500 else None,
         "street_distance_m": round(street_dist, 1),
         "poi": poi if poi and poi_dist < 500 else None,

@@ -33,7 +33,6 @@ DB_FILE = MAPS_DIR / "japan.db"
 PBF_FILE = MAPS_DIR / "japan-latest.osm.pbf"
 GEOFABRIK_URL = "https://download.geofabrik.de/asia/japan-latest.osm.pbf"
 
-# Japan: 4=prefecture group, 5=prefecture, 7=city/ward, 8=town/village
 ADMIN_LEVELS = {4, 5, 7, 8}
 
 POI_TAG_KEYS = ["railway", "public_transport", "station", "amenity", "shop", "tourism", "historic", "leisure"]
@@ -122,6 +121,18 @@ def _create_schema(conn: sqlite3.Connection) -> None:
         CREATE VIRTUAL TABLE IF NOT EXISTS pois_rtree USING rtree(
             id, min_lat, max_lat, min_lng, max_lng
         );
+
+        CREATE TABLE IF NOT EXISTS addresses (
+            id           INTEGER PRIMARY KEY,
+            street       TEXT    NOT NULL,
+            housenumber  TEXT    NOT NULL,
+            lat          REAL    NOT NULL,
+            lng          REAL    NOT NULL
+        );
+
+        CREATE VIRTUAL TABLE IF NOT EXISTS addresses_rtree USING rtree(
+            id, min_lat, max_lat, min_lng, max_lng
+        );
     """)
 
 
@@ -151,8 +162,11 @@ def parse_and_build(pbf_path: Path, db_path: Path) -> None:
     street_rtree_batch = []
     poi_batch = []
     poi_rtree_batch = []
+    addr_batch = []
+    addr_rtree_batch = []
 
     node_count = 0
+    addr_count = 0
     way_count = 0
     rel_count = 0
     total_nodes = 0
@@ -189,6 +203,14 @@ def parse_and_build(pbf_path: Path, db_path: Path) -> None:
                         poi_batch.append((nid, name, tags.get("name:en"), category, subcategory, lat, lon))
                         poi_rtree_batch.append((nid, lat, lat, lon, lon))
                         node_count += 1
+
+                # Check if this node has an address (housenumber)
+                housenumber = tags.get("addr:housenumber")
+                addr_street = tags.get("addr:street")
+                if housenumber and addr_street:
+                    addr_batch.append((nid, addr_street, housenumber, lat, lon))
+                    addr_rtree_batch.append((nid, lat, lat, lon, lon))
+                    addr_count += 1
 
         elif etype == "way":
             if total_nodes > 0 and total_ways == 0:
@@ -248,7 +270,7 @@ def parse_and_build(pbf_path: Path, db_path: Path) -> None:
                             admin_rtree_batch.append((rid, avg_lat - r, avg_lat + r, avg_lng - r, avg_lng + r))
                             rel_count += 1
 
-    click.echo(f"    Ways done: {total_ways:,}, Streets: {way_count:,}, Admin areas: {rel_count:,}")
+    click.echo(f"    Ways done: {total_ways:,}, Streets: {way_count:,}, Addresses: {addr_count:,}, Admin areas: {rel_count:,}")
 
     # Free memory
     del node_coords
@@ -281,12 +303,21 @@ def parse_and_build(pbf_path: Path, db_path: Path) -> None:
         "INSERT OR REPLACE INTO pois_rtree (id, min_lat, max_lat, min_lng, max_lng) VALUES (?, ?, ?, ?, ?)",
         poi_rtree_batch,
     )
+    conn.executemany(
+        "INSERT OR REPLACE INTO addresses (id, street, housenumber, lat, lng) VALUES (?, ?, ?, ?, ?)",
+        addr_batch,
+    )
+    conn.executemany(
+        "INSERT OR REPLACE INTO addresses_rtree (id, min_lat, max_lat, min_lng, max_lng) VALUES (?, ?, ?, ?, ?)",
+        addr_rtree_batch,
+    )
 
     conn.commit()
 
     admin_count = conn.execute("SELECT COUNT(*) FROM admin_areas").fetchone()[0]
     street_count = conn.execute("SELECT COUNT(*) FROM streets").fetchone()[0]
     poi_count = conn.execute("SELECT COUNT(*) FROM pois").fetchone()[0]
+    addr_count_db = conn.execute("SELECT COUNT(*) FROM addresses").fetchone()[0]
     conn.close()
 
     db_size_mb = db_path.stat().st_size / (1024 * 1024)
@@ -294,6 +325,7 @@ def parse_and_build(pbf_path: Path, db_path: Path) -> None:
     click.echo(f"  Size: {db_size_mb:.1f} MB")
     click.echo(f"  Admin areas: {admin_count:,}")
     click.echo(f"  Streets: {street_count:,}")
+    click.echo(f"  Addresses: {addr_count_db:,}")
     click.echo(f"  POIs: {poi_count:,}")
 
 
